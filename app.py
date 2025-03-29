@@ -52,14 +52,81 @@ page = st.sidebar.radio(
 # Data Upload Page
 if page == "Data Upload":
     st.header("Upload Your Bakery Sales Data")
-    st.markdown("""
-    Upload your historical sales data to start forecasting. The data should include:
-    - Date (date or datetime format)
-    - Item type/name (string)
-    - Quantity sold (numeric)
-    - Revenue (numeric)
-    - Cost of goods sold (COGS) (numeric)
-    """)
+    
+    # Two tabs: Instructions and Upload
+    tab1, tab2 = st.tabs(["Instructions", "Upload Data"])
+    
+    with tab1:
+        st.markdown("""
+        ### Data Requirements
+        
+        Your data file should include the following information:
+        
+        | Column | Description | Example Values |
+        | ------ | ----------- | -------------- |
+        | Date | Date of the sale | 2023-01-15, 01/15/2023 |
+        | Item | Name of the bakery product | Croissant, Bread, Cake |
+        | Quantity | Number of items sold | 25, 100 |
+        | Revenue | Total sales amount | 125.50, 500.00 |
+        | Cost | Cost of goods sold | 50.20, 200.00 |
+        
+        ### Accepted Column Names
+        
+        The system recognizes various column names:
+        
+        - **Date**: date, datetime, day, sale_date, transaction_date, date of sale
+        - **Item**: item, product, product_name, item_name, item_type, bakery item
+        - **Quantity**: quantity, qty, units, units_sold, quantity_sold, count
+        - **Revenue**: revenue, sales, amount, sales_amount, income, price
+        - **Cost**: cogs, cost, cost_of_goods_sold, costs, expense, production cost
+        
+        ### Sample Data Format
+        
+        Download our sample template files to see the correct format:
+        """)
+        
+        # Read and prepare sample files for download
+        try:
+            with open('sample_bakery_data.csv', 'rb') as f:
+                csv_data = f.read()
+            
+            with open('sample_bakery_data.xlsx', 'rb') as f:
+                excel_data = f.read()
+                
+            col1, col2 = st.columns(2)
+            with col1:
+                st.download_button(
+                    label="📥 Download CSV Template",
+                    data=csv_data,
+                    file_name="bakery_data_template.csv",
+                    mime="text/csv"
+                )
+            
+            with col2:
+                st.download_button(
+                    label="📥 Download Excel Template",
+                    data=excel_data,
+                    file_name="bakery_data_template.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+                
+            # Display sample data preview
+            sample_df = pd.read_csv('sample_bakery_data.csv')
+            st.subheader("Sample Data Preview")
+            st.dataframe(sample_df.head())
+            
+        except Exception as e:
+            st.info("Sample templates are being prepared. Please try again later.")
+            
+    with tab2:
+        st.markdown("""
+        Upload your historical sales data to start forecasting. The file should include:
+        - Date (date or datetime format)
+        - Item type/name (string)
+        - Quantity sold (numeric)
+        - Revenue (numeric)
+        - Cost of goods sold (COGS) (numeric)
+        """)
     
     # File uploader
     uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=["csv", "xlsx"])
