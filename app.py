@@ -66,35 +66,64 @@ if page == "Data Upload":
     
     if uploaded_file is not None:
         try:
-            # Read the file based on its extension
-            file_extension = uploaded_file.name.split(".")[-1]
-            if file_extension.lower() == "csv":
-                data = pd.read_csv(uploaded_file)
-            elif file_extension.lower() == "xlsx":
-                data = pd.read_excel(uploaded_file)
-            
-            # Validate data
-            validation_result, message = validate_data(data)
-            
-            if validation_result:
-                # Preprocess data
-                processed_data = preprocess_data(data)
-                st.session_state.data = processed_data
+            # Show a progress indicator
+            with st.spinner('Reading and processing your file...'):
+                # Get the file extension
+                file_extension = uploaded_file.name.split(".")[-1]
                 
-                # Display success message and data preview
-                st.success("Data uploaded and processed successfully!")
-                st.subheader("Data Preview")
-                st.dataframe(processed_data.head())
+                # Read the file into a pandas DataFrame
+                try:
+                    if file_extension.lower() == "csv":
+                        data = pd.read_csv(uploaded_file)
+                        st.info(f"CSV file detected with {len(data)} rows and {len(data.columns)} columns.")
+                    elif file_extension.lower() == "xlsx":
+                        # Use engine='openpyxl' explicitly
+                        data = pd.read_excel(uploaded_file, engine='openpyxl')
+                        st.info(f"Excel file detected with {len(data)} rows and {len(data.columns)} columns.")
+                    else:
+                        st.error(f"Unsupported file type: {file_extension}. Please upload a CSV or Excel file.")
+                        st.stop()
+                except Exception as file_error:
+                    st.error(f"Error reading the file: {str(file_error)}")
+                    st.warning("If uploading an Excel file, make sure it's properly formatted.")
+                    st.info("For Excel files, try saving as .xlsx format using Excel or LibreOffice.")
+                    st.stop()
                 
-                # Display basic statistics
-                st.subheader("Basic Statistics")
-                st.write(processed_data.describe())
-            else:
-                st.error(f"Error in data validation: {message}")
-                st.info("Please ensure your data includes date, item name, quantity, revenue, and COGS columns.")
+                # Display the raw data preview for debugging
+                st.subheader("Raw Data Preview")
+                st.dataframe(data.head())
+                st.text(f"Column names: {list(data.columns)}")
+                
+                # Validate data
+                validation_result, message = validate_data(data)
+                
+                if validation_result:
+                    # Preprocess data
+                    processed_data = preprocess_data(data)
+                    st.session_state.data = processed_data
+                    
+                    # Display success message and data preview
+                    st.success("Data uploaded and processed successfully!")
+                    st.subheader("Processed Data Preview")
+                    st.dataframe(processed_data.head())
+                    
+                    # Display basic statistics
+                    st.subheader("Basic Statistics")
+                    st.write(processed_data.describe())
+                else:
+                    st.error(f"Error in data validation: {message}")
+                    st.info("Please ensure your data includes date, item name, quantity, revenue, and COGS columns.")
+                    st.text("Required columns can be named in various ways:")
+                    st.text("- Date: date, datetime, day, sale_date, transaction_date")
+                    st.text("- Item: item, product, product_name, item_name, item_type")
+                    st.text("- Quantity: quantity, qty, units, units_sold")
+                    st.text("- Revenue: revenue, sales, amount, sales_amount")
+                    st.text("- COGS: cogs, cost, cost_of_goods_sold, expense")
         except Exception as e:
             st.error(f"Error processing file: {str(e)}")
-            st.info("Please check your file format and try again.")
+            st.warning("Please check your file format and try again.")
+            import traceback
+            st.text(f"Detailed error (for debugging):\n{traceback.format_exc()}")
     
     # Option to use a reset button
     if st.session_state.data is not None:
