@@ -67,10 +67,17 @@ def generate_production_recommendations(forecast_data, product_name="All Product
         risk_assessment = "**Risk Assessment**: No high-risk days identified in the forecast period."
     
     # Calculate additional metrics
-    avg_daily_production = daily_plan['Recommended Production'].mean()
-    total_production = daily_plan['Recommended Production'].sum()
-    peak_production = daily_plan['Recommended Production'].max()
-    peak_production_date = daily_plan.loc[daily_plan['Recommended Production'].idxmax(), 'Date']
+    # Check if dataframe is empty to prevent ValueError
+    if daily_plan.empty:
+        avg_daily_production = 0
+        total_production = 0
+        peak_production = 0
+        peak_production_date = "N/A"
+    else:
+        avg_daily_production = daily_plan['Recommended Production'].mean()
+        total_production = daily_plan['Recommended Production'].sum()
+        peak_production = daily_plan['Recommended Production'].max()
+        peak_production_date = daily_plan.loc[daily_plan['Recommended Production'].idxmax(), 'Date']
     
     # Generate additional recommendations
     additional_recommendations = generate_additional_recommendations(
@@ -108,25 +115,50 @@ def generate_additional_recommendations(daily_plan, product_name, avg_production
     Returns:
     - recommendations_text: String with additional recommendations
     """
-    # Calculate day-to-day variability
-    daily_plan['Prev_Production'] = daily_plan['Recommended Production'].shift(1)
-    daily_plan['Daily_Change'] = daily_plan['Recommended Production'] - daily_plan['Prev_Production']
-    daily_plan['Percent_Change'] = (daily_plan['Daily_Change'] / daily_plan['Prev_Production']) * 100
-    
-    # Drop NaN values (first row will have NaN for change calculation)
-    daily_plan.dropna(subset=['Percent_Change'], inplace=True)
-    
-    # Find days with significant changes (more than 20%)
-    significant_changes = daily_plan[abs(daily_plan['Percent_Change']) > 20]
-    
-    # Find the weekly pattern (which days have higher production)
-    daily_plan['Day_Name'] = pd.to_datetime(daily_plan['Date']).dt.day_name()
-    weekday_avg = daily_plan.groupby('Day_Name')['Recommended Production'].mean()
-    highest_day = weekday_avg.idxmax()
-    lowest_day = weekday_avg.idxmin()
-    
     # Generate recommendations text
     recommendations = []
+    
+    # Check if dataframe is empty to prevent ValueError
+    if daily_plan.empty:
+        # Default recommendations for empty data
+        recommendations.append("**No Production Data Available**")
+        recommendations.append("- No forecast data is available for the selected product and time range.")
+        recommendations.append("- Try selecting a different product or extending the forecast period.")
+        
+        # Set dummy values for highest/lowest day
+        highest_day = "Not available"
+        lowest_day = "Not available"
+        # Set empty significant_changes
+        significant_changes = pd.DataFrame()
+    else:
+        # Calculate day-to-day variability
+        daily_plan['Prev_Production'] = daily_plan['Recommended Production'].shift(1)
+        daily_plan['Daily_Change'] = daily_plan['Recommended Production'] - daily_plan['Prev_Production']
+        daily_plan['Percent_Change'] = (daily_plan['Daily_Change'] / daily_plan['Prev_Production']) * 100
+        
+        # Drop NaN values (first row will have NaN for change calculation)
+        daily_plan.dropna(subset=['Percent_Change'], inplace=True)
+        
+        # Find days with significant changes (more than 20%)
+        significant_changes = daily_plan[abs(daily_plan['Percent_Change']) > 20]
+        
+        # Handle empty dataframe after dropping NaNs
+        if daily_plan.empty:
+            highest_day = "Not available"
+            lowest_day = "Not available"
+            significant_changes = pd.DataFrame()
+        else:
+            # Find the weekly pattern (which days have higher production)
+            daily_plan['Day_Name'] = pd.to_datetime(daily_plan['Date']).dt.day_name()
+            weekday_avg = daily_plan.groupby('Day_Name')['Recommended Production'].mean()
+            
+            # Handle empty groupby result
+            if len(weekday_avg) == 0:
+                highest_day = "Not available"
+                lowest_day = "Not available"
+            else:
+                highest_day = weekday_avg.idxmax()
+                lowest_day = weekday_avg.idxmin()
     
     # Product specific recommendation
     if product_name != "All Products":
@@ -149,7 +181,13 @@ def generate_additional_recommendations(daily_plan, product_name, avg_production
     # Capacity planning insights
     recommendations.append("\n**Capacity Planning:**")
     recommendations.append(f"- Peak production day requires {peak_production} units")
-    recommendations.append(f"- This is {((peak_production/avg_production)-1)*100:.1f}% higher than the average daily production")
+    
+    # Avoid division by zero error
+    if avg_production > 0:
+        percent_higher = ((peak_production/avg_production)-1)*100
+        recommendations.append(f"- This is {percent_higher:.1f}% higher than the average daily production")
+    else:
+        recommendations.append("- No percentage calculation possible (average production is zero)")
     recommendations.append("- Ensure that equipment and staff capacity can handle peak days")
     recommendations.append("- Consider pre-producing stable components if peak exceeds production capacity")
     
