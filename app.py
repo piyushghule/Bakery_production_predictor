@@ -1,19 +1,8 @@
+import streamlit as st
+import traceback
 import os
-print("✅ DEBUG: Entered app.py")  # Will show in logs
 
-import streamlit as st
-import traceback
-
-st.set_page_config(
-    page_title="Bakery Sales Forecasting",
-    page_icon="🥐",
-    layout="wide"
-)
-
-st.text("✅ App has started...")
-import streamlit as st
-import traceback
-
+print("✅ DEBUG: Entered app.py")
 st.set_page_config(
     page_title="Bakery Sales Forecasting",
     page_icon="🥐",
@@ -23,20 +12,29 @@ st.set_page_config(
 st.text("✅ App has started...")
 
 try:
+    print("🔄 Importing pandas, numpy, datetime, io...")
     import pandas as pd
     import numpy as np
     from datetime import datetime, timedelta
     import io
 
+    print("🔄 Importing utils modules...")
     from utils.data_processing import preprocess_data, validate_data
+    print("✅ data_processing imported")
+
     from utils.forecasting import train_forecast_model, make_predictions
+    print("✅ forecasting imported")
+
     from utils.visualization import (
         plot_sales_trends,
         plot_product_distribution,
         plot_sales_forecast,
         plot_seasonality
     )
+    print("✅ visualization imported")
+
     from utils.recommendations import generate_production_recommendations
+    print("✅ recommendations imported")
 
     st.text("✅ All modules imported successfully.")
 
@@ -54,9 +52,7 @@ try:
 
     st.text("✅ Session state initialized.")
 
-    # You can now begin adding back your app logic step-by-step below.
-    # Use st.text("Loaded section XYZ") to track what works
-
 except Exception as e:
     st.error("🚨 The app crashed due to an error during startup.")
     st.code(traceback.format_exc())
+    print("❌ ERROR during app startup:\n", traceback.format_exc())
