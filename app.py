@@ -1,8 +1,13 @@
-import streamlit as st
-import traceback
+print("✅ Step 1: importing os")
 import os
 
-print("✅ DEBUG: Entered app.py")
+print("✅ Step 2: importing streamlit")
+import streamlit as st
+
+print("✅ Step 3: importing traceback")
+import traceback
+
+print("✅ Step 4: setting Streamlit config")
 st.set_page_config(
     page_title="Bakery Sales Forecasting",
     page_icon="🥐",
@@ -10,6 +15,7 @@ st.set_page_config(
 )
 
 st.text("✅ App has started...")
+print("✅ Step 5: Streamlit display success")
 
 try:
     print("🔄 Importing pandas, numpy, datetime, io...")
