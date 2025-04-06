@@ -1,3 +1,16 @@
+import os
+print("✅ DEBUG: Entered app.py")  # Will show in logs
+
+import streamlit as st
+import traceback
+
+st.set_page_config(
+    page_title="Bakery Sales Forecasting",
+    page_icon="🥐",
+    layout="wide"
+)
+
+st.text("✅ App has started...")
 import streamlit as st
 import traceback
 
